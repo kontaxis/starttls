@@ -1,0 +1,65 @@
+.PHONY: all clean
+
+hostname = "\"www.example.com\""
+
+all: \
+	bin/smtp_ssl3  bin/smtp_ssl3_god  bin/smtp_tls1  bin/smtp_tls1_god  \
+	bin/smtp_tls11 bin/smtp_tls11_god bin/smtp_tls12 bin/smtp_tls12_god \
+	bin/replay
+
+bin/smtp_ssl3: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__SSL_3_0__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_ssl3
+
+bin/smtp_ssl3_god: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__SSL_3_0__ -D__TLS_GOD__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_ssl3_god
+
+bin/smtp_tls1: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__TLS_1_0__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_tls1
+
+bin/smtp_tls1_god: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__TLS_1_0__ -D__TLS_GOD__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_tls1_god
+
+bin/smtp_tls11: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__TLS_1_1__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_tls11
+
+bin/smtp_tls11_god: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__TLS_1_1__ -D__TLS_GOD__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_tls11_god
+
+bin/smtp_tls12: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__TLS_1_2__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_tls12
+
+bin/smtp_tls12_god: src/smtp.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=0 -D__TLS_1_2__ -D__TLS_GOD__ -Wall \
+		-D__HOSTNAME__=$(hostname) \
+		src/smtp.c src/tls.c -o bin/smtp_tls12_god
+
+bin/replay: src/replay.c src/tls* src/ciphersuites.h src/aux.h
+	mkdir -p bin && \
+	gcc -D__DEBUG__=1 -Wall \
+		src/replay.c src/tls.c -o bin/replay
+
+clean:
+	rm -rf bin ssl.* ssl.replay.dbg x509-*.der
+	rm -i Makefile
