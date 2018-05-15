@@ -13,5 +13,6 @@ XARGSBIN=`which xargs`; if [ "${XARGSBIN}" == "" ]; then \
 # update the hostname variable in the Makefile with the actual name of this
 # host (so that reverse lookups match, ideally there's an MX record too but
 # that's may be asking too much)
-sed s/"^hostname = .*\$"/"hostname = \"\\\\\"`curl -s http://curlmyip.com \
+sed s/"^hostname = .*\$"/"hostname = \"\\\\\"`curl -s \
+	https://tools.100tx.org/myipaddress/ \
 	| xargs dig +short -x | sed s/"\.\$"//g`\\\\\"\""/g _Makefile > Makefile
