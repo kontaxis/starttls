@@ -199,9 +199,9 @@ int probe(char *target, uint16_t port, uint8_t tls_direct)
 	/* 10 second timeout to send or receive any data */
 	t.tv_sec  = 10;
 	t.tv_usec = 0;
-	if (setsockopt(sockfd, SOCK_STREAM, SO_SNDTIMEO, (void *)&t,
+	if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (void *)&t,
 				sizeof(struct timeval)) == -1 ||
-			setsockopt(sockfd, SOCK_STREAM, SO_RCVTIMEO, (void *)&t,
+			setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (void *)&t,
 				sizeof(struct timeval)) == -1) {
 		perror("setsockopt");
 		return -1;
