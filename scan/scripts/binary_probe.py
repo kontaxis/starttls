@@ -280,11 +280,11 @@ def do_probe(suites):
 			do_probe(l.split(","))
 
 
-suites = []
-target = ""
-port   = ""
-probe  = ""
-propts = []
+suites  = []
+target  = ""
+port    = ""
+prober  = ""
+propts  = []
 
 # Follow through
 # By default this script will output the next set of scan rules and terminate.
