@@ -21,8 +21,40 @@ int tls_set_out (int fd);
 int tls_set_suites (uint16_t *suites, uint16_t suite_count);
 /* Configuration. Optional. Set a callback function to be invoked
  * for each certificate of a Certificate handshake message. */
-int tls_set_cb_cert (
-        int (*handler)(uint8_t *certificate, uint32_t certificate_length));
+int tls_set_callback_handshake_certificate (int (*handler)(
+	uint8_t *certificate, uint32_t certificate_length));
+/* Configuration. Optional. Set a callback function to be invoked
+ * for each ServerKeyExchange handshake message. It is the responsibility
+ * of the function's implementation to correctly parse the message structure
+ * based on the key exchange algorithm.
+ */
+struct __attribute__((__packed__)) ServerDHParams {
+	uint16_t dh_p_length;
+	uint8_t  dh_p[0xFFFF];
+	uint16_t dh_g_length;
+	uint8_t  dh_g[0xFFFF];
+	uint16_t dh_Ys_length;
+	uint8_t  dh_Ys[0xFFFF];
+};
+struct __attribute__((__packed__)) Signature {
+	uint8_t  algorithm_hash;
+	uint8_t  algorithm_signature;
+	uint16_t signature_length;
+	uint8_t  signature[0xFFFF];
+};
+#define SERVER_KEYEXCHANGE_UNKNOWN  0x0
+#define SERVER_KEYEXCHANGE_DHPARAMS 0x7
+struct __attribute__((__packed__)) ServerKeyExchange_DHparams {
+  struct ServerDHParams  *params;
+};
+#define SERVER_KEYEXCHANGE_DHPARAMS_SIGNATURE (\
+	0x3 | SERVER_KEYEXCHANGE_DHPARAMS)
+struct __attribute__((__packed__)) ServerKeyExchange_DHparams_signature {
+  struct ServerDHParams  *params;
+  struct DigitallySigned *signed_params;
+};
+int tls_set_callback_handshake_server_key_exchange (int (*handler)(
+	uint8_t *ServerKeyExchange, uint32_t ServerKeyExchangeType));
 
 
 /* Execution. Live mode. Read from tls_in (logically a socket) and

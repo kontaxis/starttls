@@ -326,7 +326,7 @@ CipherSuite CipherSuites[CIPHERSUITES] = {
 #endif
 
 	/* == (Emphemeral)Diffie-Hellman Exchange == */
-	
+
 #if __SSL_3_0__ || __TLS_1_0__ || __TLS_GOD__
 	/* TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA  */ 0x000B,
 #endif
@@ -66127,10 +66127,179 @@ const char * CipherSuiteNames[CIPHERSUITESMAX + 1] = {
 	"ERR_NOT_IMPLEMENTED                  ", /* 0xFFFF */
 };
 
+/*
+ * Extract the key exchange algorithm from a given ciphersuite and test
+ * against known algorithms.
+ */
+#define KEYEXCHANGE_UNKNOWN ((0 << 0) & 0xFFFFFFFF)
+#define KEYEXCHANGE_DHE_DSS ((1 << 0) & 0xFFFFFFFF)
+#define KEYEXCHANGE_DHE_RSA ((1 << 1) & 0xFFFFFFFF)
+#define KEYEXCHANGE_DH_ANON ((1 << 2) & 0xFFFFFFFF)
+#define KEYEXCHANGE_RSA     ((1 << 3) & 0xFFFFFFFF)
+#define KEYEXCHANGE_DH_DSS  ((1 << 4) & 0xFFFFFFFF)
+#define KEYEXCHANGE_DH_RSA  ((1 << 5) & 0xFFFFFFFF)
+
+#define HAS_KEYEXCHANGE_DHPARAMS(n) (n & (\
+	KEYEXCHANGE_DH_ANON | \
+	KEYEXCHANGE_DHE_DSS | \
+	KEYEXCHANGE_DHE_RSA))
+
+#define HAS_KEYEXCHANGE_DHPARAMS_SIGNED(n) (n & (\
+	KEYEXCHANGE_DHE_DSS | \
+	KEYEXCHANGE_DHE_RSA))
+
+#define IS_CIPHERSUITE_KEYEXCHANGE_DH_ANON(n) (\
+	CipherSuite_KeyExchangeAlgorithm(n) & CIPHERSUITE_KEYEXCHANGE_DH_ANON)
+
+#define IS_CIPHERSUITE_KEYEXCHANGE_DHE_DSS(n) (\
+	CipherSuite_KeyExchangeAlgorithm(n) & CIPHERSUITE_KEYEXCHANGE_DHE_DSS)
+
+#define IS_CIPHERSUITE_KEYEXCHANGE_DHE_RSA(n) (\
+	CipherSuite_KeyExchangeAlgorithm(n) & CIPHERSUITE_KEYEXCHANGE_DHE_RSA)
+
+#define IS_CIPHERSUITE_KEYEXCHANGE_RSA(n)     (\
+	CipherSuite_KeyExchangeAlgorithm(n) & CIPHERSUITE_KEYEXCHANGE_RSA)
+
+#define IS_CIPHERSUITE_KEYEXCHANGE_DH_DSS(n)  (\
+	CipherSuite_KeyExchangeAlgorithm(n) & CIPHERSUITE_KEYEXCHANGE_DH_DSS)
+
+#define IS_CIPHERSUITE_KEYEXCHANGE_DH_RSA(n)  (\
+	CipherSuite_KeyExchangeAlgorithm(n) & CIPHERSUITE_KEYEXCHANGE_DH_RSA)
+
+uint32_t CipherSuite_KeyExchangeAlgorithm (uint16_t ciphersuite)
+{
+	switch (ciphersuite)
+	{
+			/* TLS_DH_anon_EXPORT_WITH_RC4_40_MD5    */ case 0x0017:
+			/* TLS_DH_anon_WITH_RC4_128_MD5          */ case 0x0018:
+			/* TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA */ case 0x0019:
+			/* TLS_DH_anon_WITH_DES_CBC_SHA          */ case 0x001A:
+			/* TLS_DH_anon_WITH_3DES_EDE_CBC_SHA     */ case 0x001B:
+			/* TLS_DH_anon_WITH_AES_128_CBC_SHA      */ case 0x0034:
+			/* TLS_DH_anon_WITH_AES_256_CBC_SHA      */ case 0x003A:
+			/* TLS_DH_anon_WITH_AES_128_CBC_SHA256   */ case 0x006C:
+			/* TLS_DH_anon_WITH_AES_256_CBC_SHA256   */ case 0x006D:
+			/* TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA */ case 0x0046:
+			/* TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA */ case 0x0089:
+			/* TLS_DH_anon_WITH_SEED_CBC_SHA         */ case 0x009B:
+			/* TLS_DH_anon_WITH_AES_128_GCM_SHA256   */ case 0x00A6:
+			/* TLS_DH_anon_WITH_AES_256_GCM_SHA384   */ case 0x00A7:
+			/* TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256 */ case 0x00BF:
+			/* TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256 */ case 0x00C5:
+			return KEYEXCHANGE_DH_ANON;
+			break;
+			/* TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA */ case 0x0011:
+			/* TLS_DHE_DSS_WITH_DES_CBC_SHA          */ case 0x0012:
+			/* TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA     */ case 0x0013:
+			/* TLS_DHE_DSS_WITH_AES_128_CBC_SHA      */ case 0x0032:
+			/* TLS_DHE_DSS_WITH_AES_256_CBC_SHA      */ case 0x0038:
+			/* TLS_DHE_DSS_WITH_AES_128_CBC_SHA256   */ case 0x0040:
+			/* TLS_DHE_DSS_WITH_AES_256_CBC_SHA256   */ case 0x006A:
+			/* TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA */ case 0x0044:
+			/* TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA */ case 0x0087:
+			/* TLS_DHE_DSS_WITH_SEED_CBC_SHA         */ case 0x0099:
+			/* TLS_DHE_DSS_WITH_AES_128_GCM_SHA256   */ case 0x00A2:
+			/* TLS_DHE_DSS_WITH_AES_256_GCM_SHA384   */ case 0x00A3:
+			/* TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256 */ case 0x00BD:
+			/* TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256 */ case 0x00C3:
+			/* TLS_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA */ case 0x0063:
+			/* TLS_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA  */ case 0x0065:
+			/* TLS_DHE_DSS_WITH_RC4_128_SHA            */ case 0x0066:
+			return KEYEXCHANGE_DHE_DSS;
+			break;
+			/* TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA */ case 0x0014:
+			/* TLS_DHE_RSA_WITH_DES_CBC_SHA          */ case 0x0015:
+			/* TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA     */ case 0x0016:
+			/* TLS_DHE_RSA_WITH_AES_128_CBC_SHA      */ case 0x0033:
+			/* TLS_DHE_RSA_WITH_AES_256_CBC_SHA      */ case 0x0039:
+			/* TLS_DHE_RSA_WITH_AES_128_CBC_SHA256   */ case 0x0067:
+			/* TLS_DHE_RSA_WITH_AES_256_CBC_SHA256   */ case 0x006B:
+			/* TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA */ case 0x0045:
+			/* TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA */ case 0x0088:
+			/* TLS_DHE_RSA_WITH_SEED_CBC_SHA         */ case 0x009A:
+			/* TLS_DHE_RSA_WITH_AES_128_GCM_SHA256   */ case 0x009E:
+			/* TLS_DHE_RSA_WITH_AES_256_GCM_SHA384   */ case 0x009F:
+			/* TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 */ case 0x00BE:
+			/* TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256 */ case 0x00C4:
+			return KEYEXCHANGE_DHE_RSA;
+			break;
+			/* TLS_RSA_WITH_NULL_MD5                 */ case 0x0001:
+			/* TLS_RSA_WITH_NULL_SHA                 */ case 0x0002:
+			/* TLS_RSA_EXPORT_WITH_RC4_40_MD5        */ case 0x0003:
+			/* TLS_RSA_WITH_RC4_128_MD5              */ case 0x0004:
+			/* TLS_RSA_WITH_RC4_128_SHA              */ case 0x0005:
+			/* TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5    */ case 0x0006:
+			/* TLS_RSA_WITH_IDEA_CBC_SHA             */ case 0x0007:
+			/* TLS_RSA_EXPORT_WITH_DES40_CBC_SHA     */ case 0x0008:
+			/* TLS_RSA_WITH_DES_CBC_SHA              */ case 0x0009:
+			/* TLS_RSA_WITH_3DES_EDE_CBC_SHA         */ case 0x000A:
+			/* TLS_RSA_WITH_AES_128_CBC_SHA          */ case 0x002F:
+			/* TLS_RSA_WITH_AES_256_CBC_SHA          */ case 0x0035:
+			/* TLS_RSA_WITH_NULL_SHA256              */ case 0x003B:
+			/* TLS_RSA_WITH_AES_128_CBC_SHA256       */ case 0x003C:
+			/* TLS_RSA_WITH_AES_256_CBC_SHA256       */ case 0x003D:
+			/* TLS_RSA_WITH_CAMELLIA_128_CBC_SHA     */ case 0x0041:
+			/* TLS_RSA_EXPORT1024_WITH_RC4_56_MD5      */ case 0x0060:
+			/* TLS_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5  */ case 0x0061:
+			/* TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA     */ case 0x0062:
+			/* TLS_RSA_EXPORT1024_WITH_RC4_56_SHA      */ case 0x0064:
+			/* TLS_RSA_WITH_CAMELLIA_256_CBC_SHA     */ case 0x0084:
+			/* TLS_RSA_PSK_WITH_RC4_128_SHA          */ case 0x0092:
+			/* TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA     */ case 0x0093:
+			/* TLS_RSA_PSK_WITH_AES_128_CBC_SHA      */ case 0x0094:
+			/* TLS_RSA_PSK_WITH_AES_256_CBC_SHA      */ case 0x0095:
+			/* TLS_RSA_WITH_SEED_CBC_SHA             */ case 0x0096:
+			/* TLS_RSA_WITH_AES_128_GCM_SHA256       */ case 0x009C:
+			/* TLS_RSA_WITH_AES_256_GCM_SHA384       */ case 0x009D:
+			/* TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256     */ case 0x00BA:
+			/* TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256     */ case 0x00C0:
+			return KEYEXCHANGE_RSA;
+			break;
+			/* TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA  */ case 0x000B:
+			/* TLS_DH_DSS_WITH_DES_CBC_SHA           */ case 0x000C:
+			/* TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA      */ case 0x000D:
+			/* TLS_DH_DSS_WITH_AES_128_CBC_SHA       */ case 0x0030:
+			/* TLS_DH_DSS_WITH_AES_256_CBC_SHA       */ case 0x0036:
+			/* TLS_DH_DSS_WITH_AES_128_CBC_SHA256    */ case 0x003E:
+			/* TLS_DH_DSS_WITH_AES_256_CBC_SHA256    */ case 0x0068:
+			/* TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA  */ case 0x0042:
+			/* TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA  */ case 0x0085:
+			/* TLS_DH_DSS_WITH_SEED_CBC_SHA          */ case 0x0097:
+			/* TLS_DH_DSS_WITH_AES_128_GCM_SHA256    */ case 0x00A4:
+			/* TLS_DH_DSS_WITH_AES_256_GCM_SHA384    */ case 0x00A5:
+			/* TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256  */ case 0x00BB:
+			/* TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256  */ case 0x00C1:
+			return KEYEXCHANGE_DH_DSS;
+			break;
+			/* TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA  */ case 0x000E:
+			/* TLS_DH_RSA_WITH_DES_CBC_SHA           */ case 0x000F:
+			/* TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA      */ case 0x0010:
+			/* TLS_DH_RSA_WITH_AES_128_CBC_SHA       */ case 0x0031:
+			/* TLS_DH_RSA_WITH_AES_256_CBC_SHA       */ case 0x0037:
+			/* TLS_DH_RSA_WITH_AES_128_CBC_SHA256    */ case 0x003F:
+			/* TLS_DH_RSA_WITH_AES_256_CBC_SHA256    */ case 0x0069:
+			/* TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA  */ case 0x0043:
+			/* TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA  */ case 0x0086:
+			/* TLS_DH_RSA_WITH_SEED_CBC_SHA          */ case 0x0098:
+			/* TLS_DH_RSA_WITH_AES_128_GCM_SHA256    */ case 0x00A0:
+			/* TLS_DH_RSA_WITH_AES_256_GCM_SHA384    */ case 0x00A1:
+			/* TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256  */ case 0x00BC:
+			/* TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256  */ case 0x00C2:
+			return KEYEXCHANGE_DH_RSA;
+			break;
+		default:
+			return KEYEXCHANGE_UNKNOWN;
+			break;
+	}
+
+	return KEYEXCHANGE_UNKNOWN;
+}
+
 /* Largest compression number */
 #define COMPRESSIONMAX 0
 
-#define COMPRESSION_TXT(n) (((n) >= 0 && (n) <= PROTOCOLMAX) ? Compression[(n)] : "UNKNOWN")
+#define COMPRESSION_TXT(n) (\
+	((n) >= 0 && (n) <= COMPRESSIONMAX) ? Compression[(n)] : "UNKNOWN")
 
 char * Compression[COMPRESSIONMAX + 1] = {
 	"null"

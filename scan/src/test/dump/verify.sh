@@ -56,7 +56,9 @@ for c in {0x00,0x04}; do # try with an unsupported and a supported cipher
 	echo "Running prober..."
 	${e} -t ${target} -p 25 -x ${c} > smtp.txt 2> log.txt
 	r=$?
-	if [ "${r}" != "0" ] && [ "${r}" != "30" ]; then
+	#  4: ERROR_NONE (Success)
+	# 30: ERROR_TLS  (TLS handshake failed, e.g., unsupported ciphersuite)
+	if [ "${r}" != "4" ] && [ "${r}" != "30" ]; then
 		>&2 echo "Fatal. Trouble(${r}). Check log.txt";
 		exit 1;
 	fi

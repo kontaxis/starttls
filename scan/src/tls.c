@@ -63,7 +63,7 @@ unsigned int tls_initialized = 0;
 /*
  * process a TLS Handshake ClientHello message
  */
-int process_TLS_Handshake_ClientHello()
+int tls_process_Handshake_ClientHello()
 {
 #if __DEBUG__
 	unsigned int i;
@@ -78,63 +78,63 @@ int process_TLS_Handshake_ClientHello()
 	char time_buf[80];
 #endif
 
-	assert(n24toh32(TLSHandshake_header.Handshake__length) >=
-		sizeof(client_hello_min));
+	assert(n24toh32(tls_Handshake_header.Handshake__length) >=
+		sizeof(tls_ClientHello_min));
 
-	must_read_bytes = n24toh32(TLSHandshake_header.Handshake__length);
+	must_read_bytes = n24toh32(tls_Handshake_header.Handshake__length);
 
 	/* Read up to the session ID length byte. Since the session ID
    * is of variable length we need to figure out how much to read as such. */
 
-	if (read_bytes(tls_in, &client_hello_intro,
-		sizeof(client_hello_intro)) <= 0) {
+	if (read_bytes(tls_in, &tls_ClientHello_intro,
+		sizeof(tls_ClientHello_intro)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= sizeof(client_hello_intro);
+	must_read_bytes -= sizeof(tls_ClientHello_intro);
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ClientHello Version: %s (0x%02x%02x)\n",
-		PROTOCOL_TXT(client_hello_intro.client_version_minor),
-		client_hello_intro.client_version_major,
-		client_hello_intro.client_version_minor);
+		PROTOCOL_TXT(tls_ClientHello_intro.client_version_minor),
+		tls_ClientHello_intro.client_version_major,
+		tls_ClientHello_intro.client_version_minor);
 
-	t = ntohl(client_hello_intro.random_gmt_unix_time);
+	t = ntohl(tls_ClientHello_intro.random_gmt_unix_time);
 	ts = localtime(&t);
 	if (strftime(time_buf, sizeof(time_buf), "%b %d, %Y %H:%M:%S %Z", ts)) {
 		fprintf(stderr, "TLS ClientHello Random gmt_unix_time: %s (%u)\n",
-			time_buf, ntohl(client_hello_intro.random_gmt_unix_time));
+			time_buf, ntohl(tls_ClientHello_intro.random_gmt_unix_time));
 	}
 
 	fprintf(stderr, "TLS ClientHello Random random_bytes: ");
 	for (i = 0; i < 28; i++)
-		fprintf(stderr, "%02x", client_hello_intro.random_random_bytes[i]);
+		fprintf(stderr, "%02x", tls_ClientHello_intro.random_random_bytes[i]);
 	fprintf(stderr, "\n");
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_intro, sizeof(client_hello_intro));
+		r = write(tls_out, &tls_ClientHello_intro, sizeof(tls_ClientHello_intro));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
 		}
 	}
 
-	if (read_bytes(tls_in, &client_hello_session.session_id_length,
-		sizeof(client_hello_session.session_id_length)) <= 0) {
+	if (read_bytes(tls_in, &tls_ClientHello_session.session_id_length,
+		sizeof(tls_ClientHello_session.session_id_length)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= sizeof(client_hello_session.session_id_length);
+	must_read_bytes -= sizeof(tls_ClientHello_session.session_id_length);
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ClientHello Session ID Length: %u\n",
-		client_hello_session.session_id_length);
+		tls_ClientHello_session.session_id_length);
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_session.session_id_length,
-			sizeof(client_hello_session.session_id_length));
+		r = write(tls_out, &tls_ClientHello_session.session_id_length,
+			sizeof(tls_ClientHello_session.session_id_length));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -143,24 +143,24 @@ int process_TLS_Handshake_ClientHello()
 
   /* Now we know we must read session_id_length bytes */
 
-	assert(client_hello_session.session_id_length <=
-		sizeof(client_hello_session.session_id));
+	assert(tls_ClientHello_session.session_id_length <=
+		sizeof(tls_ClientHello_session.session_id));
 
-	if (client_hello_session.session_id_length) {
-		if (read_bytes(tls_in, client_hello_session.session_id,
-			client_hello_session.session_id_length) <= 0) {
+	if (tls_ClientHello_session.session_id_length) {
+		if (read_bytes(tls_in, tls_ClientHello_session.session_id,
+			tls_ClientHello_session.session_id_length) <= 0) {
 			return -1;
 		}
-		must_read_bytes -= client_hello_session.session_id_length;
+		must_read_bytes -= tls_ClientHello_session.session_id_length;
 	}
 
 #if __DEBUG__
-	for (i = 0; i < client_hello_session.session_id_length; i++) {
+	for (i = 0; i < tls_ClientHello_session.session_id_length; i++) {
 		if (i == 0) {
 			fprintf(stderr, "TLS ClientHello Session ID: ");
 		}
-		fprintf(stderr, "%02x", client_hello_session.session_id[i]);
-		if (i + 1 == client_hello_session.session_id_length) {
+		fprintf(stderr, "%02x", tls_ClientHello_session.session_id[i]);
+		if (i + 1 == tls_ClientHello_session.session_id_length) {
 			fprintf(stderr, "\n");
 		}
 	}
@@ -168,9 +168,9 @@ int process_TLS_Handshake_ClientHello()
 
 	/* log */
 	if (tls_out != -1) {
-		if (client_hello_session.session_id_length) {
-			r = write(tls_out, client_hello_session.session_id,
-				client_hello_session.session_id_length);
+		if (tls_ClientHello_session.session_id_length) {
+			r = write(tls_out, tls_ClientHello_session.session_id,
+				tls_ClientHello_session.session_id_length);
 			if (r == 0 || r == -1) {
 				perror("write");
 				return -1;
@@ -180,51 +180,51 @@ int process_TLS_Handshake_ClientHello()
 
 	/* ciphersuites */
 
-	if (read_bytes(tls_in, &client_hello_ciphersuites.cipher_suites_length,
-		sizeof(client_hello_ciphersuites.cipher_suites_length)) <= 0) {
+	if (read_bytes(tls_in, &tls_ClientHello_ciphersuites.cipher_suites_length,
+		sizeof(tls_ClientHello_ciphersuites.cipher_suites_length)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= sizeof(client_hello_ciphersuites.cipher_suites_length);
+	must_read_bytes -= sizeof(tls_ClientHello_ciphersuites.cipher_suites_length);
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ClientHello Cipher Suites Length: %u\n",
-		n16toh16(client_hello_ciphersuites.cipher_suites_length));
+		n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length));
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_ciphersuites.cipher_suites_length,
-			sizeof(client_hello_ciphersuites.cipher_suites_length));
+		r = write(tls_out, &tls_ClientHello_ciphersuites.cipher_suites_length,
+			sizeof(tls_ClientHello_ciphersuites.cipher_suites_length));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
 		}
 	}
 
-	assert(n16toh16(client_hello_ciphersuites.cipher_suites_length) <=
-		sizeof(client_hello_ciphersuites.cipher_suites));
+	assert(n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length) <=
+		sizeof(tls_ClientHello_ciphersuites.cipher_suites));
 
-	if (read_bytes(tls_in, client_hello_ciphersuites.cipher_suites,
-		n16toh16(client_hello_ciphersuites.cipher_suites_length)) <= 0) {
+	if (read_bytes(tls_in, tls_ClientHello_ciphersuites.cipher_suites,
+		n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= n16toh16(client_hello_ciphersuites.cipher_suites_length);
+	must_read_bytes -= n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length);
 
 #if __DEBUG__
 	/* length is in bytes */
 	for (i = 0;
-		i < n16toh16(client_hello_ciphersuites.cipher_suites_length) /
+		i < n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length) /
 			sizeof(CipherSuite); i++) {
 		fprintf(stderr, "TLS ClientHello Cipher Suite: %s (0x%04x)\n",
-			CIPHER_TXT(n16toh16(client_hello_ciphersuites.cipher_suites[i])),
-			n16toh16(client_hello_ciphersuites.cipher_suites[i]));
+			CIPHER_TXT(n16toh16(tls_ClientHello_ciphersuites.cipher_suites[i])),
+			n16toh16(tls_ClientHello_ciphersuites.cipher_suites[i]));
 	}
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, client_hello_ciphersuites.cipher_suites,
-			n16toh16(client_hello_ciphersuites.cipher_suites_length));
+		r = write(tls_out, tls_ClientHello_ciphersuites.cipher_suites,
+			n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -233,49 +233,49 @@ int process_TLS_Handshake_ClientHello()
 
 	/* compression */
 
-	if (read_bytes(tls_in, &client_hello_compression.compression_methods_length,
-		sizeof(client_hello_compression.compression_methods_length)) <= 0) {
+	if (read_bytes(tls_in, &tls_ClientHello_compression.compression_methods_length,
+		sizeof(tls_ClientHello_compression.compression_methods_length)) <= 0) {
 		return -1;
 	}
 	must_read_bytes -=
-		sizeof(client_hello_compression.compression_methods_length);
+		sizeof(tls_ClientHello_compression.compression_methods_length);
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ClientHello Compression Methods Length: %u\n",
-		client_hello_compression.compression_methods_length);
+		tls_ClientHello_compression.compression_methods_length);
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_compression.compression_methods_length,
-			sizeof(client_hello_compression.compression_methods_length));
+		r = write(tls_out, &tls_ClientHello_compression.compression_methods_length,
+			sizeof(tls_ClientHello_compression.compression_methods_length));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
 		}
 	}
 
-	assert(client_hello_compression.compression_methods_length <=
-		sizeof(client_hello_compression.compression_methods));
+	assert(tls_ClientHello_compression.compression_methods_length <=
+		sizeof(tls_ClientHello_compression.compression_methods));
 
-	if (read_bytes(tls_in, client_hello_compression.compression_methods,
-		client_hello_compression.compression_methods_length) <= 0) {
+	if (read_bytes(tls_in, tls_ClientHello_compression.compression_methods,
+		tls_ClientHello_compression.compression_methods_length) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= client_hello_compression.compression_methods_length;
+	must_read_bytes -= tls_ClientHello_compression.compression_methods_length;
 
 #if __DEBUG__
-	for (i = 0; i < client_hello_compression.compression_methods_length; i++) {
+	for (i = 0; i < tls_ClientHello_compression.compression_methods_length; i++) {
 		fprintf(stderr, "TLS ClientHello Compression Method: %s (%u)\n",
-			COMPRESSION_TXT(client_hello_compression.compression_methods[i]),
-			client_hello_compression.compression_methods[i]);
+			COMPRESSION_TXT(tls_ClientHello_compression.compression_methods[i]),
+			tls_ClientHello_compression.compression_methods[i]);
 	}
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, client_hello_compression.compression_methods,
-			client_hello_compression.compression_methods_length);
+		r = write(tls_out, tls_ClientHello_compression.compression_methods,
+			tls_ClientHello_compression.compression_methods_length);
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -285,21 +285,21 @@ int process_TLS_Handshake_ClientHello()
 	/* extensions */
 
 	if (must_read_bytes > 0) {
-		if (read_bytes(tls_in, &extensions.extensions_length,
-			sizeof(extensions.extensions_length)) <= 0) {
+		if (read_bytes(tls_in, &tls_extensions.extensions_length,
+			sizeof(tls_extensions.extensions_length)) <= 0) {
 			return -1;
 		}
-		must_read_bytes -= sizeof(extensions.extensions_length);
+		must_read_bytes -= sizeof(tls_extensions.extensions_length);
 
 #if __DEBUG__
 		fprintf(stderr, "TLS ClientHello Extensions Length: %u\n",
-			n16toh16(extensions.extensions_length));
+			n16toh16(tls_extensions.extensions_length));
 #endif
 
 		/* log */
 		if (tls_out != -1) {
-			r = write(tls_out, &extensions.extensions_length,
-				sizeof(extensions.extensions_length));
+			r = write(tls_out, &tls_extensions.extensions_length,
+				sizeof(tls_extensions.extensions_length));
 			if (r == 0 || r == -1) {
 				perror("write");
 				return -1;
@@ -308,22 +308,22 @@ int process_TLS_Handshake_ClientHello()
 
 		/* Now we know we must read extensions_length bytes */
 
-		assert(n16toh16(extensions.extensions_length) <=
-			sizeof(extensions.extensions));
+		assert(n16toh16(tls_extensions.extensions_length) <=
+			sizeof(tls_extensions.extensions));
 
-		if (n16toh16(extensions.extensions_length)) {
-			if (read_bytes(tls_in, extensions.extensions,
-				n16toh16(extensions.extensions_length)) <= 0) {
+		if (n16toh16(tls_extensions.extensions_length)) {
+			if (read_bytes(tls_in, tls_extensions.extensions,
+				n16toh16(tls_extensions.extensions_length)) <= 0) {
 				return -1;
 			}
-			must_read_bytes -= n16toh16(extensions.extensions_length);
+			must_read_bytes -= n16toh16(tls_extensions.extensions_length);
 		}
 
 		/* log */
 		if (tls_out != -1) {
-			if (n16toh16(extensions.extensions_length)) {
-				r = write(tls_out, extensions.extensions,
-					n16toh16(extensions.extensions_length));
+			if (n16toh16(tls_extensions.extensions_length)) {
+				r = write(tls_out, tls_extensions.extensions,
+					n16toh16(tls_extensions.extensions_length));
 				if (r == 0 || r == -1) {
 					perror("write");
 					return -1;
@@ -340,28 +340,28 @@ int process_TLS_Handshake_ClientHello()
 }
 
 
-int prepare_TLS_Handshake_ClientHello (void)
+int tls_prepare_Handshake_ClientHello (void)
 {
 	uint16_t i;
 
-	client_hello_intro.client_version_major = PROTOCOLMAJOR;
-	client_hello_intro.client_version_minor = PROTOCOLMINOR;
-	client_hello_intro.random_gmt_unix_time = 0;
-	memset(client_hello_intro.random_random_bytes, 0,
-		sizeof(client_hello_intro.random_random_bytes));
+	tls_ClientHello_intro.client_version_major = PROTOCOLMAJOR;
+	tls_ClientHello_intro.client_version_minor = PROTOCOLMINOR;
+	tls_ClientHello_intro.random_gmt_unix_time = 0;
+	memset(tls_ClientHello_intro.random_random_bytes, 0,
+		sizeof(tls_ClientHello_intro.random_random_bytes));
 
-	client_hello_session.session_id_length = 0;
+	tls_ClientHello_session.session_id_length = 0;
 
 	for (i = 0; i < opt_ciphersuite_count &&
-		i < (sizeof(client_hello_ciphersuites.cipher_suites)/
-				sizeof(client_hello_ciphersuites.cipher_suites[0])); i++) {
-		client_hello_ciphersuites.cipher_suites[i] = h16ton16(opt_ciphersuites[i]);
+		i < (sizeof(tls_ClientHello_ciphersuites.cipher_suites)/
+				sizeof(tls_ClientHello_ciphersuites.cipher_suites[0])); i++) {
+		tls_ClientHello_ciphersuites.cipher_suites[i] = h16ton16(opt_ciphersuites[i]);
 	}
-	client_hello_ciphersuites.cipher_suites_length =
+	tls_ClientHello_ciphersuites.cipher_suites_length =
 		h16ton16(i * sizeof(opt_ciphersuites[0]));
 
-	client_hello_compression.compression_methods_length = 0x1;
-	client_hello_compression.compression_methods[0] = 0x0;
+	tls_ClientHello_compression.compression_methods_length = 0x1;
+	tls_ClientHello_compression.compression_methods[0] = 0x0;
 
 	return 0;
 }
@@ -370,7 +370,7 @@ int prepare_TLS_Handshake_ClientHello (void)
 /*
  * process a TLS Handshake ServerHello message
  */
-int process_TLS_Handshake_ServerHello()
+int tls_process_Handshake_ServerHello()
 {
 #if __DEBUG__
 	unsigned int i;
@@ -385,68 +385,68 @@ int process_TLS_Handshake_ServerHello()
 	char time_buf[80];
 #endif
 
-	assert(n24toh32(TLSHandshake_header.Handshake__length) >=
-		sizeof(server_hello_min));
+	assert(n24toh32(tls_Handshake_header.Handshake__length) >=
+		sizeof(tls_ServerHello_min));
 
-	must_read_bytes = n24toh32(TLSHandshake_header.Handshake__length);
+	must_read_bytes = n24toh32(tls_Handshake_header.Handshake__length);
 
 	/* Read up to the session ID length byte. Since the session ID
    * is of variable length we need to figure out how much to read as such. */
 
-	if (read_bytes(tls_in, &server_hello_intro,
-		sizeof(server_hello_intro)) <= 0) {
+	if (read_bytes(tls_in, &tls_ServerHello_intro,
+		sizeof(tls_ServerHello_intro)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= sizeof(server_hello_intro);
+	must_read_bytes -= sizeof(tls_ServerHello_intro);
 
-	server_version_major = server_hello_intro.server_version_major;
-	server_version_minor = server_hello_intro.server_version_minor;
+	server_version_major = tls_ServerHello_intro.server_version_major;
+	server_version_minor = tls_ServerHello_intro.server_version_minor;
 
 	stat_flags |= STAT_SERVER_VERSION;
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ServerHello Version: %s (0x%02x%02x)\n",
-		PROTOCOL_TXT(server_hello_intro.server_version_minor),
-		server_hello_intro.server_version_major,
-		server_hello_intro.server_version_minor);
+		PROTOCOL_TXT(tls_ServerHello_intro.server_version_minor),
+		tls_ServerHello_intro.server_version_major,
+		tls_ServerHello_intro.server_version_minor);
 
-	t = ntohl(server_hello_intro.random_gmt_unix_time);
+	t = ntohl(tls_ServerHello_intro.random_gmt_unix_time);
 	ts = localtime(&t);
 	if (strftime(time_buf, sizeof(time_buf), "%b %d, %Y %H:%M:%S %Z", ts)) {
 		fprintf(stderr, "TLS ServerHello Random gmt_unix_time: %s (%u)\n",
-			time_buf, ntohl(server_hello_intro.random_gmt_unix_time));
+			time_buf, ntohl(tls_ServerHello_intro.random_gmt_unix_time));
 	}
 
 	fprintf(stderr, "TLS ServerHello Random random_bytes: ");
 	for (i = 0; i < 28; i++)
-		fprintf(stderr, "%02x", server_hello_intro.random_random_bytes[i]);
+		fprintf(stderr, "%02x", tls_ServerHello_intro.random_random_bytes[i]);
 	fprintf(stderr, "\n");
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &server_hello_intro, sizeof(server_hello_intro));
+		r = write(tls_out, &tls_ServerHello_intro, sizeof(tls_ServerHello_intro));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
 		}
 	}
 
-	if (read_bytes(tls_in, &server_hello_session.session_id_length,
-		sizeof(server_hello_session.session_id_length)) <= 0) {
+	if (read_bytes(tls_in, &tls_ServerHello_session.session_id_length,
+		sizeof(tls_ServerHello_session.session_id_length)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= sizeof(server_hello_session.session_id_length);
+	must_read_bytes -= sizeof(tls_ServerHello_session.session_id_length);
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ServerHello Session ID Length: %u\n",
-		server_hello_session.session_id_length);
+		tls_ServerHello_session.session_id_length);
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &server_hello_session.session_id_length,
-			sizeof(server_hello_session.session_id_length));
+		r = write(tls_out, &tls_ServerHello_session.session_id_length,
+			sizeof(tls_ServerHello_session.session_id_length));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -455,24 +455,24 @@ int process_TLS_Handshake_ServerHello()
 
   /* Now we know we must read session_id_length bytes */
 
-	assert(server_hello_session.session_id_length <=
-		sizeof(server_hello_session.session_id));
+	assert(tls_ServerHello_session.session_id_length <=
+		sizeof(tls_ServerHello_session.session_id));
 
-	if (server_hello_session.session_id_length) {
-		if (read_bytes(tls_in, server_hello_session.session_id,
-			server_hello_session.session_id_length) <= 0) {
+	if (tls_ServerHello_session.session_id_length) {
+		if (read_bytes(tls_in, tls_ServerHello_session.session_id,
+			tls_ServerHello_session.session_id_length) <= 0) {
 			return -1;
 		}
-		must_read_bytes -= server_hello_session.session_id_length;
+		must_read_bytes -= tls_ServerHello_session.session_id_length;
 	}
 
 #if __DEBUG__
-	for (i = 0; i < server_hello_session.session_id_length; i++) {
+	for (i = 0; i < tls_ServerHello_session.session_id_length; i++) {
 		if (i == 0) {
 			fprintf(stderr, "TLS ServerHello Session ID: ");
 		}
-		fprintf(stderr, "%02x", server_hello_session.session_id[i]);
-		if (i + 1 == server_hello_session.session_id_length) {
+		fprintf(stderr, "%02x", tls_ServerHello_session.session_id[i]);
+		if (i + 1 == tls_ServerHello_session.session_id_length) {
 			fprintf(stderr, "\n");
 		}
 	}
@@ -480,9 +480,9 @@ int process_TLS_Handshake_ServerHello()
 
 	/* log */
 	if (tls_out != -1) {
-		if (server_hello_session.session_id_length) {
-			r = write(tls_out, server_hello_session.session_id,
-				server_hello_session.session_id_length);
+		if (tls_ServerHello_session.session_id_length) {
+			r = write(tls_out, tls_ServerHello_session.session_id,
+				tls_ServerHello_session.session_id_length);
 			if (r == 0 || r == -1) {
 				perror("write");
 				return -1;
@@ -492,26 +492,26 @@ int process_TLS_Handshake_ServerHello()
 
 	/* ciphersuite */
 
-	if (read_bytes(tls_in, &server_hello_ciphersuite.cipher_suite,
-		sizeof(server_hello_ciphersuite.cipher_suite)) <= 0) {
+	if (read_bytes(tls_in, &tls_ServerHello_ciphersuite.cipher_suite,
+		sizeof(tls_ServerHello_ciphersuite.cipher_suite)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= sizeof(server_hello_ciphersuite.cipher_suite);
+	must_read_bytes -= sizeof(tls_ServerHello_ciphersuite.cipher_suite);
 
-	server_suite = n16toh16(server_hello_ciphersuite.cipher_suite);
+	server_suite = n16toh16(tls_ServerHello_ciphersuite.cipher_suite);
 
 	stat_flags |= STAT_SERVER_SUITE;
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ServerHello Cipher Suite: %s (0x%04x)\n",
-		CIPHER_TXT(n16toh16(server_hello_ciphersuite.cipher_suite)),
-		n16toh16(server_hello_ciphersuite.cipher_suite));
+		CIPHER_TXT(n16toh16(tls_ServerHello_ciphersuite.cipher_suite)),
+		n16toh16(tls_ServerHello_ciphersuite.cipher_suite));
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &server_hello_ciphersuite.cipher_suite,
-			sizeof(server_hello_ciphersuite.cipher_suite));
+		r = write(tls_out, &tls_ServerHello_ciphersuite.cipher_suite,
+			sizeof(tls_ServerHello_ciphersuite.cipher_suite));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -520,22 +520,22 @@ int process_TLS_Handshake_ServerHello()
 
 	/* compression */
 
-	if (read_bytes(tls_in, &server_hello_compression.compression_method,
-		sizeof(server_hello_compression.compression_method)) <= 0) {
+	if (read_bytes(tls_in, &tls_ServerHello_compression.compression_method,
+		sizeof(tls_ServerHello_compression.compression_method)) <= 0) {
 		return -1;
 	}
-	must_read_bytes -= sizeof(server_hello_compression.compression_method);
+	must_read_bytes -= sizeof(tls_ServerHello_compression.compression_method);
 
 #if __DEBUG__
 	fprintf(stderr, "TLS ServerHello Compression Method: %s (%u)\n",
-		COMPRESSION_TXT(server_hello_compression.compression_method),
-		server_hello_compression.compression_method);
+		COMPRESSION_TXT(tls_ServerHello_compression.compression_method),
+		tls_ServerHello_compression.compression_method);
 #endif
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &server_hello_compression.compression_method,
-			sizeof(server_hello_compression.compression_method));
+		r = write(tls_out, &tls_ServerHello_compression.compression_method,
+			sizeof(tls_ServerHello_compression.compression_method));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -545,21 +545,21 @@ int process_TLS_Handshake_ServerHello()
 	/* extensions */
 
 	if (must_read_bytes > 0) {
-		if (read_bytes(tls_in, &extensions.extensions_length,
-			sizeof(extensions.extensions_length)) <= 0) {
+		if (read_bytes(tls_in, &tls_extensions.extensions_length,
+			sizeof(tls_extensions.extensions_length)) <= 0) {
 			return -1;
 		}
-		must_read_bytes -= sizeof(extensions.extensions_length);
+		must_read_bytes -= sizeof(tls_extensions.extensions_length);
 
 #if __DEBUG__
 		fprintf(stderr, "TLS ServerHello Extensions Length: %u\n",
-			n16toh16(extensions.extensions_length));
+			n16toh16(tls_extensions.extensions_length));
 #endif
 
 		/* log */
 		if (tls_out != -1) {
-			r = write(tls_out, &extensions.extensions_length,
-				sizeof(extensions.extensions_length));
+			r = write(tls_out, &tls_extensions.extensions_length,
+				sizeof(tls_extensions.extensions_length));
 			if (r == 0 || r == -1) {
 				perror("write");
 				return -1;
@@ -568,22 +568,22 @@ int process_TLS_Handshake_ServerHello()
 
 		/* Now we know we must read extensions_length bytes */
 
-		assert(n16toh16(extensions.extensions_length) <=
-			sizeof(extensions.extensions));
+		assert(n16toh16(tls_extensions.extensions_length) <=
+			sizeof(tls_extensions.extensions));
 
-		if (n16toh16(extensions.extensions_length)) {
-			if (read_bytes(tls_in, extensions.extensions,
-				n16toh16(extensions.extensions_length)) <= 0) {
+		if (n16toh16(tls_extensions.extensions_length)) {
+			if (read_bytes(tls_in, tls_extensions.extensions,
+				n16toh16(tls_extensions.extensions_length)) <= 0) {
 				return -1;
 			}
-			must_read_bytes -= n16toh16(extensions.extensions_length);
+			must_read_bytes -= n16toh16(tls_extensions.extensions_length);
 		}
 
 		/* log */
 		if (tls_out != -1) {
-			if (n16toh16(extensions.extensions_length)) {
-				r = write(tls_out, extensions.extensions,
-					n16toh16(extensions.extensions_length));
+			if (n16toh16(tls_extensions.extensions_length)) {
+				r = write(tls_out, tls_extensions.extensions,
+					n16toh16(tls_extensions.extensions_length));
 				if (r == 0 || r == -1) {
 					perror("write");
 					return -1;
@@ -602,12 +602,13 @@ int process_TLS_Handshake_ServerHello()
 
 /*
  * process a TLS Handshake Certificate message
+ * (extract individual certificates etc.)
  *
  * Message consists of a { uint8_t certificate_list_length[3] } header
  * followed by one or more instances of { uint8_t certificate_length[3];
  * <certificate blob> }.
 */
-int process_TLS_Handshake_Certificate()
+int tls_process_Handshake_Certificate()
 {
 	unsigned int r;
 
@@ -615,15 +616,15 @@ int process_TLS_Handshake_Certificate()
 
 	/* certificate list */
 
-	if (read_bytes(tls_in, &certificate.certificate_list_length,
-		sizeof(certificate.certificate_list_length)) <= 0) {
+	if (read_bytes(tls_in, &tls_Certificate.certificate_list_length,
+		sizeof(tls_Certificate.certificate_list_length)) <= 0) {
 		return -1;
 	}
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &certificate.certificate_list_length,
-			sizeof(certificate.certificate_list_length));
+		r = write(tls_out, &tls_Certificate.certificate_list_length,
+			sizeof(tls_Certificate.certificate_list_length));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -632,25 +633,25 @@ int process_TLS_Handshake_Certificate()
 
 #if __DEBUG__
 		fprintf(stderr, "TLS Certificates Length: %u\n",
-			n24toh32(certificate.certificate_list_length));
+			n24toh32(tls_Certificate.certificate_list_length));
 #endif
 
-	must_read_bytes = n24toh32(certificate.certificate_list_length);
+	must_read_bytes = n24toh32(tls_Certificate.certificate_list_length);
 
 	while(must_read_bytes > 0) {
-		assert(must_read_bytes >= sizeof(asn1certificate_min));
+		assert(must_read_bytes >= sizeof(tls_ASN1Cert_min));
 
 		/* certificate */
-		if (read_bytes(tls_in, &asn1certificate.certificate_length,
-			sizeof(asn1certificate.certificate_length)) <= 0) {
+		if (read_bytes(tls_in, &tls_ASN1Cert.certificate_length,
+			sizeof(tls_ASN1Cert.certificate_length)) <= 0) {
 			return -1;
 		}
-		must_read_bytes -= sizeof(asn1certificate.certificate_length);
+		must_read_bytes -= sizeof(tls_ASN1Cert.certificate_length);
 
 		/* log */
 		if (tls_out != -1) {
-			r = write(tls_out, &asn1certificate.certificate_length,
-				sizeof(asn1certificate.certificate_length));
+			r = write(tls_out, &tls_ASN1Cert.certificate_length,
+				sizeof(tls_ASN1Cert.certificate_length));
 			if (r == 0 || r == -1) {
 				perror("write");
 				return -1;
@@ -659,22 +660,22 @@ int process_TLS_Handshake_Certificate()
 
 #if __DEBUG__
 		fprintf(stderr, "TLS Certificate Length: %u\n",
-			n24toh32(asn1certificate.certificate_length));
+			n24toh32(tls_ASN1Cert.certificate_length));
 #endif
 
-		assert(n24toh32(asn1certificate.certificate_length) <=
-			sizeof(asn1certificate.certificate));
+		assert(n24toh32(tls_ASN1Cert.certificate_length) <=
+			sizeof(tls_ASN1Cert.certificate));
 
-		if (read_bytes(tls_in, asn1certificate.certificate,
-			n24toh32(asn1certificate.certificate_length)) <= 0) {
+		if (read_bytes(tls_in, tls_ASN1Cert.certificate,
+			n24toh32(tls_ASN1Cert.certificate_length)) <= 0) {
 			return -1;
 		}
-		must_read_bytes -= n24toh32(asn1certificate.certificate_length);
+		must_read_bytes -= n24toh32(tls_ASN1Cert.certificate_length);
 
 		/* log */
 		if (tls_out != -1) {
-			r = write(tls_out, asn1certificate.certificate,
-				n24toh32(asn1certificate.certificate_length));
+			r = write(tls_out, tls_ASN1Cert.certificate,
+				n24toh32(tls_ASN1Cert.certificate_length));
 			if (r == 0 || r == -1) {
 				perror("write");
 				return -1;
@@ -684,9 +685,200 @@ int process_TLS_Handshake_Certificate()
 		/* invoke certificate handler if present */
 		if (tls_callbacks[SSL3_RT_HANDSHAKE][SSL3_MT_CERTIFICATE]) {
 			(*tls_callbacks[SSL3_RT_HANDSHAKE][SSL3_MT_CERTIFICATE])(
-				asn1certificate.certificate,
-				n24toh32(asn1certificate.certificate_length));
+				tls_ASN1Cert.certificate,
+				n24toh32(tls_ASN1Cert.certificate_length));
 		}
+	}
+
+	return 0;
+}
+
+
+int tls_process_Handshake_ServerKeyExchange(
+	uint8_t *r_buf, uint32_t r_buf_length)
+{
+	uint32_t offset;
+
+	offset = 0;
+
+	memset(&tls_ServerKeyExchange, 0, sizeof(tls_ServerKeyExchange));
+
+	unsigned int KeyExchangeAlgorithm =
+		CipherSuite_KeyExchangeAlgorithm(server_suite);
+
+	if (HAS_KEYEXCHANGE_DHPARAMS(KeyExchangeAlgorithm)) {
+		tls_ServerKeyExchange.params = &tls_ServerDHParams;
+
+		/* Prime modulus for the Diffie-Hellman operation. */
+
+		/* Data available */
+		assert(r_buf_length - offset >= sizeof(tls_ServerDHParams.dh_p_length));
+
+		tls_ServerDHParams.dh_p_length = *((uint16_t *)(r_buf+offset));
+
+		offset += sizeof(tls_ServerDHParams.dh_p_length);
+
+#if __DEBUG__
+		fprintf(stderr, "TLS tls_ServerKeyExchange tls_ServerDHParams p Length: %u\n",
+			n16toh16(tls_ServerDHParams.dh_p_length));
+#endif
+
+		/* Data available */
+		assert(r_buf_length - offset >= n16toh16(tls_ServerDHParams.dh_p_length));
+		/* Memory available */
+		assert(sizeof(tls_ServerDHParams.dh_p) >=
+			n16toh16(tls_ServerDHParams.dh_p_length));
+
+		memcpy(tls_ServerDHParams.dh_p, r_buf+offset,
+			n16toh16(tls_ServerDHParams.dh_p_length));
+
+		offset += n16toh16(tls_ServerDHParams.dh_p_length);
+
+		/* Generator used for the Diffie-Hellman operation. */
+
+		/* Data available */
+		assert(r_buf_length - offset >= sizeof(tls_ServerDHParams.dh_g_length));
+
+		tls_ServerDHParams.dh_g_length = *((uint16_t *)(r_buf+offset));
+
+		offset += sizeof(tls_ServerDHParams.dh_g_length);
+
+#if __DEBUG__
+		fprintf(stderr, "TLS tls_ServerKeyExchange tls_ServerDHParams g Length: %u\n",
+			n16toh16(tls_ServerDHParams.dh_g_length));
+#endif
+
+		/* Data available */
+		assert(r_buf_length - offset >= n16toh16(tls_ServerDHParams.dh_g_length));
+		/* Memory available */
+		assert(sizeof(tls_ServerDHParams.dh_g) >=
+			n16toh16(tls_ServerDHParams.dh_g_length));
+
+		memcpy(tls_ServerDHParams.dh_g, r_buf+offset,
+			n16toh16(tls_ServerDHParams.dh_g_length));
+
+		offset += n16toh16(tls_ServerDHParams.dh_g_length);
+
+		/* The server's Diffie-Hellman public value (g^X mod p). */
+
+		/* Data available */
+		assert(r_buf_length - offset >= sizeof(tls_ServerDHParams.dh_Ys_length));
+
+		tls_ServerDHParams.dh_Ys_length = *((uint16_t *)(r_buf+offset));
+
+		offset += sizeof(tls_ServerDHParams.dh_Ys_length);
+
+#if __DEBUG__
+		fprintf(stderr,
+			"TLS tls_ServerKeyExchange tls_ServerDHParams Ys Length: %u\n",
+			n16toh16(tls_ServerDHParams.dh_Ys_length));
+#endif
+
+		/* Data available */
+		assert(r_buf_length - offset >= n16toh16(tls_ServerDHParams.dh_Ys_length));
+		/* Memory available */
+		assert(sizeof(tls_ServerDHParams.dh_Ys) >=
+			n16toh16(tls_ServerDHParams.dh_Ys_length));
+
+		memcpy(tls_ServerDHParams.dh_Ys, r_buf+offset,
+			n16toh16(tls_ServerDHParams.dh_Ys_length));
+
+		offset += n16toh16(tls_ServerDHParams.dh_Ys_length);
+	}
+
+	if (HAS_KEYEXCHANGE_DHPARAMS_SIGNED(KeyExchangeAlgorithm)) {
+		tls_ServerKeyExchange.signed_params = &tls_DigitallySigned;
+
+		/* Signed elements (tls.h:tls_DigitallySigned) now include a field
+		 * (SignatureAndHashAlgorithm) that explicitly specifies
+		 * the hash (and signature) algorithm used.
+		 *
+		 * Note: We are using the TLS record version fields to determine version
+		 * to handle broken TLS handshakes where the ServerHello message (setting
+		 * server_version_major, server_version_minor) arrives after the
+		 * tls_ServerKeyExchange message (or never).
+		 *
+		 * https://tools.ietf.org/html/rfc5246#section-1.2
+		 */
+		if (TLSPlaintext__versionMajor == 3 && TLSPlaintext__versionMinor == 3) {
+
+			/* Signature Hash Algorithm Hash. */
+
+			/* Data available */
+			assert(r_buf_length - offset >= sizeof(tls_DigitallySigned.algorithm_hash));
+
+			tls_DigitallySigned.algorithm_hash = *((uint8_t *)(r_buf+offset));
+
+			offset += sizeof(tls_DigitallySigned.algorithm_hash);
+
+#if __DEBUG__
+			fprintf(stderr,
+				"TLS tls_ServerKeyExchange digitally-signed Hash Algorithm: %s (%u)\n",
+				TLS_HASH_ALGORITHM_TXT(tls_DigitallySigned.algorithm_hash),
+				tls_DigitallySigned.algorithm_hash);
+#endif
+
+			/* Signature Hash Algorithm Signature. */
+
+			/* Data available */
+			assert(r_buf_length - offset >=
+				sizeof(tls_DigitallySigned.algorithm_signature));
+
+			tls_DigitallySigned.algorithm_signature = *((uint8_t *)(r_buf+offset));
+
+			offset += sizeof(tls_DigitallySigned.algorithm_signature);
+
+#if __DEBUG__
+			fprintf(stderr,
+				"TLS tls_ServerKeyExchange digitally-signed Signature Algorithm: %s (%u)\n",
+				TLS_SIGNATURE_ALGORITHM_TXT(tls_DigitallySigned.algorithm_signature),
+				tls_DigitallySigned.algorithm_signature);
+#endif
+
+		}
+
+		/* Signature */
+
+		/* Data available */
+		assert(r_buf_length - offset >= sizeof(tls_DigitallySigned.signature_length));
+
+		tls_DigitallySigned.signature_length = *((uint16_t *)(r_buf+offset));
+
+		offset += sizeof(tls_DigitallySigned.signature_length);
+
+#if __DEBUG__
+		fprintf(stderr,
+			"TLS tls_ServerKeyExchange digitally-signed Signature Length: %u\n",
+			n16toh16(tls_DigitallySigned.signature_length));
+#endif
+
+		/* Data available */
+		assert(r_buf_length - offset >=
+			n16toh16(tls_DigitallySigned.signature_length));
+		/* Memory available */
+		assert(sizeof(tls_DigitallySigned.signature) >=
+			n16toh16(tls_DigitallySigned.signature_length));
+
+		memcpy(tls_DigitallySigned.signature, r_buf+offset,
+			n16toh16(tls_DigitallySigned.signature_length));
+
+		offset += n16toh16(tls_DigitallySigned.signature_length);
+	}
+
+	/* invoke server key exchange handler if present */
+	if (tls_callbacks[SSL3_RT_HANDSHAKE][
+		SSL3_MT_SERVER_KEY_EXCHANGE]) {
+		(*tls_callbacks[SSL3_RT_HANDSHAKE][SSL3_MT_SERVER_KEY_EXCHANGE])(
+			(uint8_t *)&tls_ServerKeyExchange, (
+				(HAS_KEYEXCHANGE_DHPARAMS_SIGNED(KeyExchangeAlgorithm)) |
+				(HAS_KEYEXCHANGE_DHPARAMS(KeyExchangeAlgorithm))));
+	}
+
+	/* Make sure we've read *exactly* Handshake__length bytes */
+
+	if (offset != r_buf_length) {
+		fprintf(stderr, "%s:%s:%u Processed %u bytes (ideally %u).\n",
+			__FILE__, __FUNCTION__, __LINE__, offset, r_buf_length);
 	}
 
 	return 0;
@@ -705,21 +897,21 @@ int _tls()
 	unsigned int bail_tls = 0;
 
 	/* read socket buffer */
-	char r_buf[BUF_SIZE+1];
+	uint8_t r_buf[BUF_SIZE+1];
 
 	/* reset */
 	error_tls = TLS_ERROR_NOOP;
 
 	while(!bail_tls) {
 		/* read SSL/TLS record header */
-		if (read_bytes(tls_in, &TLSPlaintext_header,
-			sizeof(TLSPlaintext_header)) <= 0) {
+		if (read_bytes(tls_in, &tls_TLSPlaintext_header,
+			sizeof(tls_TLSPlaintext_header)) <= 0) {
 			return -1;
 		}
 
 		/* log */
 		if (tls_out != -1) {
-			r = write(tls_out, &TLSPlaintext_header, sizeof(TLSPlaintext_header));
+			r = write(tls_out, &tls_TLSPlaintext_header, sizeof(tls_TLSPlaintext_header));
 			if (r == 0 || r == -1) {
 				perror("write");
 				return -1;
@@ -729,34 +921,34 @@ int _tls()
 #if __DEBUG__
 		fprintf(stderr,"\033[1;34m[.] TLS Record "
 			"type:%u(%s) version:%u.%u length:%u\033[0m\n",
-			TLSPlaintext_header.TLSPlaintext__type,
-			TLSContentType(TLSPlaintext_header.TLSPlaintext__type),
-			TLSPlaintext_header.TLSPlaintext__versionMajor,
-			TLSPlaintext_header.TLSPlaintext__versionMinor,
-			ntohs(TLSPlaintext_header.TLSPlaintext__length));
+			tls_TLSPlaintext_header.TLSPlaintext__type,
+			tls_ContentType(tls_TLSPlaintext_header.TLSPlaintext__type),
+			tls_TLSPlaintext_header.TLSPlaintext__versionMajor,
+			tls_TLSPlaintext_header.TLSPlaintext__versionMinor,
+			ntohs(tls_TLSPlaintext_header.TLSPlaintext__length));
 #endif
 
-		TLSPlaintext__versionMajor = TLSPlaintext_header.TLSPlaintext__versionMajor;
-		TLSPlaintext__versionMinor = TLSPlaintext_header.TLSPlaintext__versionMinor;
+		TLSPlaintext__versionMajor = tls_TLSPlaintext_header.TLSPlaintext__versionMajor;
+		TLSPlaintext__versionMinor = tls_TLSPlaintext_header.TLSPlaintext__versionMinor;
 
 		stat_flags |= STAT_TLS_VERSION;
 
 		/* process SSL/TLS record */
-		switch(TLSPlaintext_header.TLSPlaintext__type) {
+		switch(tls_TLSPlaintext_header.TLSPlaintext__type) {
 			/* alert (21) */
 			case SSL3_RT_ALERT:
 				/* there must be an alert header */
-				assert(ntohs(TLSPlaintext_header.TLSPlaintext__length) >=
-					sizeof(TLSAlert_header));
+				assert(ntohs(tls_TLSPlaintext_header.TLSPlaintext__length) >=
+					sizeof(tls_Alert));
 
-				if (read_bytes(tls_in, &TLSAlert_header,
-					sizeof(TLSAlert_header)) <= 0) {
+				if (read_bytes(tls_in, &tls_Alert,
+					sizeof(tls_Alert)) <= 0) {
 					return -1;
 				}
 
 				/* log */
 				if (tls_out != -1) {
-					r = write(tls_out, &TLSAlert_header, sizeof(TLSAlert_header));
+					r = write(tls_out, &tls_Alert, sizeof(tls_Alert));
 					if (r == 0 || r == -1) {
 						perror("write");
 						return -1;
@@ -767,10 +959,10 @@ int _tls()
 				fprintf(stderr,
 					"\033[1;36m[.] TLS Alert "
 					"level:%u(%s) description:%u(%s)\033[0m\n",
-					TLSAlert_header.Alert__level,
-					AlertLevel(TLSAlert_header.Alert__level),
-					TLSAlert_header.Alert__description,
-					AlertDescription(TLSAlert_header.Alert__description));
+					tls_Alert.Alert__level,
+					tls_AlertLevel(tls_Alert.Alert__level),
+					tls_Alert.Alert__description,
+					tls_AlertDescription(tls_Alert.Alert__description));
 #endif
 
 				error_tls = TLS_ERROR_ALERT;
@@ -779,24 +971,24 @@ int _tls()
 			/* handshake (22) */
 			case SSL3_RT_HANDSHAKE:
 				/* there must be a handshake header */
-				assert(ntohs(TLSPlaintext_header.TLSPlaintext__length) >=
-					sizeof(TLSHandshake_header));
+				assert(ntohs(tls_TLSPlaintext_header.TLSPlaintext__length) >=
+					sizeof(tls_Handshake_header));
 
 				must_read_bytes =
-					ntohs(TLSPlaintext_header.TLSPlaintext__length);
+					ntohs(tls_TLSPlaintext_header.TLSPlaintext__length);
 
 				while(must_read_bytes > 0) {
 					/* read handshake header */
-					if (read_bytes(tls_in, &TLSHandshake_header,
-						sizeof(TLSHandshake_header)) <= 0) {
+					if (read_bytes(tls_in, &tls_Handshake_header,
+						sizeof(tls_Handshake_header)) <= 0) {
 						return -1;
 					}
-					must_read_bytes -= sizeof(TLSHandshake_header);
+					must_read_bytes -= sizeof(tls_Handshake_header);
 
 					/* log */
 					if (tls_out != -1) {
-						r = write(tls_out, &TLSHandshake_header,
-							sizeof(TLSHandshake_header));
+						r = write(tls_out, &tls_Handshake_header,
+							sizeof(tls_Handshake_header));
 						if (r == 0 || r == -1) {
 							perror("write");
 							return -1;
@@ -807,15 +999,15 @@ int _tls()
 					fprintf(stderr,
 						"\033[1;36m[.] TLS Handshake "
 						"type:%u(%s) length:%u\033[0m\n",
-						TLSHandshake_header.Handshake__type,
-						TLSHandshakeType(TLSHandshake_header.Handshake__type),
-						n24toh32(TLSHandshake_header.Handshake__length));
+						tls_Handshake_header.Handshake__type,
+						tls_HandshakeType(tls_Handshake_header.Handshake__type),
+						n24toh32(tls_Handshake_header.Handshake__length));
 #endif
 
           /* The record layer fragments information blocks (e.g., handshake
 					 * messages or application data) into TLSPlaintext records carrying
 					 * data in chunks of 2^14 bytes or less.*/
-          assert(ntohs(TLSPlaintext_header.TLSPlaintext__length) <= 0x4000);
+          assert(ntohs(tls_TLSPlaintext_header.TLSPlaintext__length) <= 0x4000);
 
 #if 1
 					/* We can't handle fragmentation right now.
@@ -824,66 +1016,69 @@ int _tls()
 					 * larger messages should keep fragmentation away for now.
 					 * Implementing fragmentation should include updating all
 					 * handshake type handlers to account for their respective
-					 * messages (e.g., server_hello) being fragmented and even
+					 * messages (e.g., tls_ServerHello) being fragmented and even
 					 * for the fragments to appear interleaved.*/
-					/* TODO: TLSHandshake_header.Handshake__length is NOT a reliable
+					/* TODO: tls_Handshake_header.Handshake__length is NOT a reliable
 					 * way to determine how much data is available right now. */
-					assert(ntohs(TLSPlaintext_header.TLSPlaintext__length) >=
-							sizeof(TLSHandshake_header) +
-								n24toh32(TLSHandshake_header.Handshake__length));
+					assert(ntohs(tls_TLSPlaintext_header.TLSPlaintext__length) >=
+							sizeof(tls_Handshake_header) +
+								n24toh32(tls_Handshake_header.Handshake__length));
 #endif
 
 					/* process Handshake type */
-					switch(TLSHandshake_header.Handshake__type) {
+					switch(tls_Handshake_header.Handshake__type) {
 						/* ClientHello (2) */
 						case SSL3_MT_CLIENT_HELLO:
-							if ((r = process_TLS_Handshake_ClientHello()) != 0) {return r;}
+							if ((r = tls_process_Handshake_ClientHello()) != 0) {return r;}
 							break;
 						/* ServerHello (2) */
 						case SSL3_MT_SERVER_HELLO:
-							if ((r = process_TLS_Handshake_ServerHello()) != 0) {return r;}
+							if ((r = tls_process_Handshake_ServerHello()) != 0) {return r;}
 							break;
 						/* Certificate (11) */
 						case SSL3_MT_CERTIFICATE:
-							/* save actual Certificate record */
-							if ((r = process_TLS_Handshake_Certificate()) != 0) {return r;}
+							if ((r = tls_process_Handshake_Certificate()) != 0) {return r;}
 							break;
 						/* Server Key Exchange (12) */
 						case SSL3_MT_SERVER_KEY_EXCHANGE:
-							/* consume (and ignore) rest of this record */
+							/* consume this record */
 							assert(BUF_SIZE >=
-								n24toh32(TLSHandshake_header.Handshake__length));
+								n24toh32(tls_Handshake_header.Handshake__length));
 
 							if (read_bytes(tls_in, r_buf,
-								n24toh32(TLSHandshake_header.Handshake__length)) <= 0) {
+								n24toh32(tls_Handshake_header.Handshake__length)) <= 0) {
 								return -1;
 							}
 
 							/* log */
 							if (tls_out != -1) {
 								r = write(tls_out, r_buf,
-									n24toh32(TLSHandshake_header.Handshake__length));
+									n24toh32(tls_Handshake_header.Handshake__length));
 								if (r == 0 || r == -1) {
 									perror("write");
 									return -1;
 								}
 							}
+
+							/* process this record */
+							tls_process_Handshake_ServerKeyExchange(r_buf,
+								n24toh32(tls_Handshake_header.Handshake__length));
 							break;
 						/* Certificate Request (13) */
 						case SSL3_MT_CERTIFICATE_REQUEST:
 							/* consume (and ignore) rest of this record */
 							assert(BUF_SIZE >=
-								n24toh32(TLSHandshake_header.Handshake__length));
+								n24toh32(tls_Handshake_header.Handshake__length));
 
 							if (read_bytes(tls_in, r_buf,
-								n24toh32(TLSHandshake_header.Handshake__length)) <= 0) {
+								n24toh32(tls_Handshake_header.Handshake__length)) <= 0) {
 								return -1;
 							}
 
 							/* log */
 							if (tls_out != -1) {
 								r = write(tls_out, r_buf,
-									n24toh32(TLSHandshake_header.Handshake__length));
+									n24toh32(tls_Handshake_header.Handshake__length));
 								if (r == 0 || r == -1) {
 									perror("write");
 									return -1;
@@ -894,18 +1089,18 @@ int _tls()
 						case SSL3_MT_SERVER_DONE:
 							/* consume (and ignore) rest of this record */
 							assert(BUF_SIZE >=
-								n24toh32(TLSHandshake_header.Handshake__length));
+								n24toh32(tls_Handshake_header.Handshake__length));
 
-							if (n24toh32(TLSHandshake_header.Handshake__length)) {
+							if (n24toh32(tls_Handshake_header.Handshake__length)) {
 								if (read_bytes(tls_in, r_buf,
-									n24toh32(TLSHandshake_header.Handshake__length)) <= 0) {
+									n24toh32(tls_Handshake_header.Handshake__length)) <= 0) {
 								return -1;
 								}
 
 								if (tls_out != -1) {
 									r = write(tls_out, r_buf,
-										n24toh32(TLSHandshake_header.Handshake__length));
-									if (n24toh32(TLSHandshake_header.Handshake__length) &&
+										n24toh32(tls_Handshake_header.Handshake__length));
+									if (n24toh32(tls_Handshake_header.Handshake__length) &&
 										(r == 0 || r == -1)) {
 										perror("write");
 										return -1;
@@ -920,11 +1115,11 @@ int _tls()
 #if __DEBUG__
 							fprintf(stderr,
 								"\033[1;31m[!] Unknown TLS handshake type:%u\033[0m\n",
-								(unsigned int) TLSHandshake_header.Handshake__type);
+								(unsigned int) tls_Handshake_header.Handshake__type);
 
-							for (r = 0; r < sizeof(TLSHandshake_header); r++) {
+							for (r = 0; r < sizeof(tls_Handshake_header); r++) {
 								fprintf(stderr, "0x%02x ",
-									*(((char *)&TLSHandshake_header) + r));
+									*(((char *)&tls_Handshake_header) + r));
 							}
 							fprintf(stderr, "\n");
 #endif
@@ -935,18 +1130,18 @@ int _tls()
 					}
 
 					must_read_bytes -=
-						n24toh32(TLSHandshake_header.Handshake__length);
+						n24toh32(tls_Handshake_header.Handshake__length);
 				}
 				break;
 			default:
 #if __DEBUG__
 				fprintf(stderr,
 					"\033[1;31m[!] Unknown TLS record type:%u\033[0m\n",
-					(unsigned int) TLSPlaintext_header.TLSPlaintext__type);
+					(unsigned int) tls_TLSPlaintext_header.TLSPlaintext__type);
 
-				for (r = 0; r < sizeof(TLSPlaintext_header); r++) {
+				for (r = 0; r < sizeof(tls_TLSPlaintext_header); r++) {
 					fprintf(stderr, "0x%02x ",
-						*(((char *)&TLSPlaintext_header) + r));
+						*(((char *)&tls_TLSPlaintext_header) + r));
 				}
 				fprintf(stderr, "\n");
 #endif
@@ -969,12 +1164,12 @@ int tls_live(void)
 	unsigned int r;
 
 	char buffer[
-		sizeof(TLSPlaintext_header)  +
-		sizeof(TLSHandshake_header)  +
-		sizeof(client_hello_intro)   +
-		sizeof(client_hello_session) +
-		sizeof(client_hello_ciphersuites) +
-		sizeof(client_hello_compression)];
+		sizeof(tls_TLSPlaintext_header)  +
+		sizeof(tls_Handshake_header)  +
+		sizeof(tls_ClientHello_intro)   +
+		sizeof(tls_ClientHello_session) +
+		sizeof(tls_ClientHello_ciphersuites) +
+		sizeof(tls_ClientHello_compression)];
 	uint32_t i;
 
 	if (!tls_initialized) {
@@ -1012,38 +1207,38 @@ int tls_live(void)
 	 */
 
 	/* prepare TLS Handshake ClientHello */
-	prepare_TLS_Handshake_ClientHello();
+	tls_prepare_Handshake_ClientHello();
 
 	/* prepare TLS Handshake header */
-	TLSHandshake_header.Handshake__type = SSL3_MT_CLIENT_HELLO;
+	tls_Handshake_header.Handshake__type = SSL3_MT_CLIENT_HELLO;
 	h24ton24(
 		// ClientHello Version, Random fields; 34 bytes fixed
-		sizeof(client_hello_intro) +
+		sizeof(tls_ClientHello_intro) +
 		// ClientHello Session ID; 1 bytes minimum
-		sizeof(client_hello_session.session_id_length) +
-			client_hello_session.session_id_length +
+		sizeof(tls_ClientHello_session.session_id_length) +
+			tls_ClientHello_session.session_id_length +
 		// ClientHello Ciphersuites; 4 bytes minimum
-		sizeof(client_hello_ciphersuites.cipher_suites_length) +
-			n16toh16(client_hello_ciphersuites.cipher_suites_length) +
+		sizeof(tls_ClientHello_ciphersuites.cipher_suites_length) +
+			n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length) +
 		// ClientHello Compression methods; 2 bytes minimum
-		sizeof(client_hello_compression.compression_methods_length) +
-			client_hello_compression.compression_methods_length,
-		TLSHandshake_header.Handshake__length);
+		sizeof(tls_ClientHello_compression.compression_methods_length) +
+			tls_ClientHello_compression.compression_methods_length,
+		tls_Handshake_header.Handshake__length);
 
 	/* prepare TLS record header */
-	TLSPlaintext_header.TLSPlaintext__type = SSL3_RT_HANDSHAKE;
-	TLSPlaintext_header.TLSPlaintext__versionMajor = PROTOCOLMAJOR;
-	TLSPlaintext_header.TLSPlaintext__versionMinor = PROTOCOLMINOR;
-	TLSPlaintext_header.TLSPlaintext__length = h16ton16(
+	tls_TLSPlaintext_header.TLSPlaintext__type = SSL3_RT_HANDSHAKE;
+	tls_TLSPlaintext_header.TLSPlaintext__versionMajor = PROTOCOLMAJOR;
+	tls_TLSPlaintext_header.TLSPlaintext__versionMinor = PROTOCOLMINOR;
+	tls_TLSPlaintext_header.TLSPlaintext__length = h16ton16(
 		// TLS Handshake header; 4 bytes fixed
-		sizeof(TLSHandshake_header) +
+		sizeof(tls_Handshake_header) +
 		// ClientHello message; 41 bytes minimum
-		(uint16_t)n24toh32(TLSHandshake_header.Handshake__length));
+		(uint16_t)n24toh32(tls_Handshake_header.Handshake__length));
 
 	i = 0;
 #if 0
 	/* Write TLS record header */
-	r = write(tls_in, &TLSPlaintext_header, sizeof(TLSPlaintext_header));
+	r = write(tls_in, &tls_TLSPlaintext_header, sizeof(tls_TLSPlaintext_header));
 	if (r == 0 || r == -1) {
 		perror("write");
 		return -1;
@@ -1051,21 +1246,21 @@ int tls_live(void)
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &TLSPlaintext_header, sizeof(TLSPlaintext_header));
+		r = write(tls_out, &tls_TLSPlaintext_header, sizeof(tls_TLSPlaintext_header));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
 		}
 	}
 #else
-	assert(sizeof(buffer) >= i + sizeof(TLSPlaintext_header));
-	memcpy(buffer + i, &TLSPlaintext_header, sizeof(TLSPlaintext_header));
-	i += sizeof(TLSPlaintext_header);
+	assert(sizeof(buffer) >= i + sizeof(tls_TLSPlaintext_header));
+	memcpy(buffer + i, &tls_TLSPlaintext_header, sizeof(tls_TLSPlaintext_header));
+	i += sizeof(tls_TLSPlaintext_header);
 #endif
 
 #if 0
 	/* Write TLS handshake header */
-	r = write(tls_in, &TLSHandshake_header, sizeof(TLSHandshake_header));
+	r = write(tls_in, &tls_Handshake_header, sizeof(tls_Handshake_header));
 	if (r == 0 || r == -1) {
 		perror("write");
 		return -1;
@@ -1073,21 +1268,21 @@ int tls_live(void)
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &TLSHandshake_header, sizeof(TLSHandshake_header));
+		r = write(tls_out, &tls_Handshake_header, sizeof(tls_Handshake_header));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
 		}
 	}
 #else
-	assert(sizeof(buffer) >= i + sizeof(TLSHandshake_header));
-	memcpy(buffer + i, &TLSHandshake_header, sizeof(TLSHandshake_header));
-	i += sizeof(TLSHandshake_header);
+	assert(sizeof(buffer) >= i + sizeof(tls_Handshake_header));
+	memcpy(buffer + i, &tls_Handshake_header, sizeof(tls_Handshake_header));
+	i += sizeof(tls_Handshake_header);
 #endif
 
 #if 0
 	/* Write TLS ClientHello Version, Random fields */
-	r = write(tls_in, &client_hello_intro, sizeof(client_hello_intro));
+	r = write(tls_in, &tls_ClientHello_intro, sizeof(tls_ClientHello_intro));
 	if (r == 0 || r == -1) {
 		perror("write");
 		return -1;
@@ -1095,23 +1290,23 @@ int tls_live(void)
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_intro, sizeof(client_hello_intro));
+		r = write(tls_out, &tls_ClientHello_intro, sizeof(tls_ClientHello_intro));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
 		}
 	}
 #else
-	assert(sizeof(buffer) >= i + sizeof(client_hello_intro));
-	memcpy(buffer + i, &client_hello_intro, sizeof(client_hello_intro));
-	i += sizeof(client_hello_intro);
+	assert(sizeof(buffer) >= i + sizeof(tls_ClientHello_intro));
+	memcpy(buffer + i, &tls_ClientHello_intro, sizeof(tls_ClientHello_intro));
+	i += sizeof(tls_ClientHello_intro);
 #endif
 
 #if 0
 	/* Write TLS ClientHello Session ID */
-	r = write(tls_in, &client_hello_session,
-		sizeof(client_hello_session.session_id_length) +
-			client_hello_session.session_id_length);
+	r = write(tls_in, &tls_ClientHello_session,
+		sizeof(tls_ClientHello_session.session_id_length) +
+			tls_ClientHello_session.session_id_length);
 	if (r == 0 || r == -1) {
 		perror("write");
 		return -1;
@@ -1119,9 +1314,9 @@ int tls_live(void)
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_session,
-			sizeof(client_hello_session.session_id_length) +
-				client_hello_session.session_id_length);
+		r = write(tls_out, &tls_ClientHello_session,
+			sizeof(tls_ClientHello_session.session_id_length) +
+				tls_ClientHello_session.session_id_length);
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -1129,20 +1324,20 @@ int tls_live(void)
 	}
 #else
 	assert(sizeof(buffer) >= i +
-		sizeof(client_hello_session.session_id_length) +
-			client_hello_session.session_id_length);
-	memcpy(buffer + i, &client_hello_session,
-		sizeof(client_hello_session.session_id_length) +
-			client_hello_session.session_id_length);
-	i += sizeof(client_hello_session.session_id_length) +
-				client_hello_session.session_id_length;
+		sizeof(tls_ClientHello_session.session_id_length) +
+			tls_ClientHello_session.session_id_length);
+	memcpy(buffer + i, &tls_ClientHello_session,
+		sizeof(tls_ClientHello_session.session_id_length) +
+			tls_ClientHello_session.session_id_length);
+	i += sizeof(tls_ClientHello_session.session_id_length) +
+				tls_ClientHello_session.session_id_length;
 #endif
 
 #if 0
 	/* Write TLS ClientHello Ciphersuites */
-	r = write(tls_in, &client_hello_ciphersuites,
-		sizeof(client_hello_ciphersuites.cipher_suites_length) +
-			n16toh16(client_hello_ciphersuites.cipher_suites_length));
+	r = write(tls_in, &tls_ClientHello_ciphersuites,
+		sizeof(tls_ClientHello_ciphersuites.cipher_suites_length) +
+			n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length));
 	if (r == 0 || r == -1) {
 		perror("write");
 		return -1;
@@ -1150,9 +1345,9 @@ int tls_live(void)
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_ciphersuites,
-			sizeof(client_hello_ciphersuites.cipher_suites_length) +
-				n16toh16(client_hello_ciphersuites.cipher_suites_length));
+		r = write(tls_out, &tls_ClientHello_ciphersuites,
+			sizeof(tls_ClientHello_ciphersuites.cipher_suites_length) +
+				n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length));
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -1160,21 +1355,21 @@ int tls_live(void)
 	}
 #else
 	assert(sizeof(buffer) >= i +
-		sizeof(client_hello_ciphersuites.cipher_suites_length) +
-			n16toh16(client_hello_ciphersuites.cipher_suites_length));
-	memcpy(buffer + i, &client_hello_ciphersuites,
-		sizeof(client_hello_ciphersuites.cipher_suites_length) +
-			n16toh16(client_hello_ciphersuites.cipher_suites_length));
-	i += sizeof(client_hello_ciphersuites.cipher_suites_length) +
-				n16toh16(client_hello_ciphersuites.cipher_suites_length);
+		sizeof(tls_ClientHello_ciphersuites.cipher_suites_length) +
+			n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length));
+	memcpy(buffer + i, &tls_ClientHello_ciphersuites,
+		sizeof(tls_ClientHello_ciphersuites.cipher_suites_length) +
+			n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length));
+	i += sizeof(tls_ClientHello_ciphersuites.cipher_suites_length) +
+				n16toh16(tls_ClientHello_ciphersuites.cipher_suites_length);
 #endif
 
 
 #if 0
 	/* Write TLS ClientHello Compression methods */
-	r = write(tls_in, &client_hello_compression,
-		sizeof(client_hello_compression.compression_methods_length) +
-		client_hello_compression.compression_methods_length);
+	r = write(tls_in, &tls_ClientHello_compression,
+		sizeof(tls_ClientHello_compression.compression_methods_length) +
+		tls_ClientHello_compression.compression_methods_length);
 	if (r == 0 || r == -1) {
 		perror("write");
 		return -1;
@@ -1182,9 +1377,9 @@ int tls_live(void)
 
 	/* log */
 	if (tls_out != -1) {
-		r = write(tls_out, &client_hello_compression,
-			sizeof(client_hello_compression.compression_methods_length) +
-				client_hello_compression.compression_methods_length);
+		r = write(tls_out, &tls_ClientHello_compression,
+			sizeof(tls_ClientHello_compression.compression_methods_length) +
+				tls_ClientHello_compression.compression_methods_length);
 		if (r == 0 || r == -1) {
 			perror("write");
 			return -1;
@@ -1192,13 +1387,13 @@ int tls_live(void)
 	}
 #else
 	assert(sizeof(buffer) >= i +
-		sizeof(client_hello_compression.compression_methods_length) +
-			client_hello_compression.compression_methods_length);
-	memcpy(buffer + i, &client_hello_compression,
-		sizeof(client_hello_compression.compression_methods_length) +
-			client_hello_compression.compression_methods_length);
-	i += sizeof(client_hello_compression.compression_methods_length) +
-			client_hello_compression.compression_methods_length;
+		sizeof(tls_ClientHello_compression.compression_methods_length) +
+			tls_ClientHello_compression.compression_methods_length);
+	memcpy(buffer + i, &tls_ClientHello_compression,
+		sizeof(tls_ClientHello_compression.compression_methods_length) +
+			tls_ClientHello_compression.compression_methods_length);
+	i += sizeof(tls_ClientHello_compression.compression_methods_length) +
+			tls_ClientHello_compression.compression_methods_length;
 #endif
 
 	r = write(tls_in, buffer, i);
@@ -1313,9 +1508,16 @@ int tls_set_suites(uint16_t *suites, uint16_t suite_count)
 	return 0;
 }
 
-int tls_set_cb_cert(int (*handler)(uint8_t *, uint32_t))
+int tls_set_callback_handshake_certificate(int (*handler)(uint8_t *, uint32_t))
 {
 	tls_callbacks[SSL3_RT_HANDSHAKE][SSL3_MT_CERTIFICATE] = handler;
+	return 0;
+}
+
+int tls_set_callback_handshake_server_key_exchange(
+	int (*handler)(uint8_t *, uint32_t))
+{
+	tls_callbacks[SSL3_RT_HANDSHAKE][SSL3_MT_SERVER_KEY_EXCHANGE] = handler;
 	return 0;
 }
 

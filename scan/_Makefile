@@ -61,5 +61,5 @@ bin/replay: src/replay.c src/tls* src/ciphersuites.h src/aux.h
 		src/replay.c src/tls.c -o bin/replay
 
 clean:
-	rm -rf bin ssl.* ssl.replay.dbg x509-*.der
+	rm -rf bin ssl.* ssl.replay.dbg x509-*.der server_kx_dh-*
 	rm -i Makefile
