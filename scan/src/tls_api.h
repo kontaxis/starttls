@@ -45,13 +45,13 @@ struct __attribute__((__packed__)) Signature {
 #define SERVER_KEYEXCHANGE_UNKNOWN  0x0
 #define SERVER_KEYEXCHANGE_DHPARAMS 0x7
 struct __attribute__((__packed__)) ServerKeyExchange_DHparams {
-  struct ServerDHParams  *params;
+	struct ServerDHParams  *params;
 };
 #define SERVER_KEYEXCHANGE_DHPARAMS_SIGNATURE (\
 	0x3 | SERVER_KEYEXCHANGE_DHPARAMS)
 struct __attribute__((__packed__)) ServerKeyExchange_DHparams_signature {
-  struct ServerDHParams  *params;
-  struct DigitallySigned *signed_params;
+	struct ServerDHParams  *params;
+	struct DigitallySigned *signed_params;
 };
 int tls_set_callback_handshake_server_key_exchange (int (*handler)(
 	uint8_t *ServerKeyExchange, uint32_t ServerKeyExchangeType));

@@ -84,7 +84,7 @@ int tls_process_Handshake_ClientHello()
 	must_read_bytes = n24toh32(tls_Handshake_header.Handshake__length);
 
 	/* Read up to the session ID length byte. Since the session ID
-   * is of variable length we need to figure out how much to read as such. */
+	 * is of variable length we need to figure out how much to read as such. */
 
 	if (read_bytes(tls_in, &tls_ClientHello_intro,
 		sizeof(tls_ClientHello_intro)) <= 0) {
@@ -141,7 +141,7 @@ int tls_process_Handshake_ClientHello()
 		}
 	}
 
-  /* Now we know we must read session_id_length bytes */
+	/* Now we know we must read session_id_length bytes */
 
 	assert(tls_ClientHello_session.session_id_length <=
 		sizeof(tls_ClientHello_session.session_id));
@@ -391,7 +391,7 @@ int tls_process_Handshake_ServerHello()
 	must_read_bytes = n24toh32(tls_Handshake_header.Handshake__length);
 
 	/* Read up to the session ID length byte. Since the session ID
-   * is of variable length we need to figure out how much to read as such. */
+	 * is of variable length we need to figure out how much to read as such. */
 
 	if (read_bytes(tls_in, &tls_ServerHello_intro,
 		sizeof(tls_ServerHello_intro)) <= 0) {
@@ -453,7 +453,7 @@ int tls_process_Handshake_ServerHello()
 		}
 	}
 
-  /* Now we know we must read session_id_length bytes */
+	/* Now we know we must read session_id_length bytes */
 
 	assert(tls_ServerHello_session.session_id_length <=
 		sizeof(tls_ServerHello_session.session_id));
@@ -1004,10 +1004,10 @@ int _tls()
 						n24toh32(tls_Handshake_header.Handshake__length));
 #endif
 
-          /* The record layer fragments information blocks (e.g., handshake
+					/* The record layer fragments information blocks (e.g., handshake
 					 * messages or application data) into TLSPlaintext records carrying
 					 * data in chunks of 2^14 bytes or less.*/
-          assert(ntohs(tls_TLSPlaintext_header.TLSPlaintext__length) <= 0x4000);
+					assert(ntohs(tls_TLSPlaintext_header.TLSPlaintext__length) <= 0x4000);
 
 #if 1
 					/* We can't handle fragmentation right now.
@@ -1528,14 +1528,14 @@ int tls_error()
 
 void tls_print_suites()
 {
-  uint16_t i;
+	uint16_t i;
 
-  for (i = 0; i < CIPHERSUITES; i++) {
-    fprintf(stderr,
-      "%3u CipherSuite %s = { 0x%02X,0x%02X };\n",
-      CipherSuites[i], CIPHER_TXT(CipherSuites[i]),
-      CipherSuites[i] >> 8, CipherSuites[i] & 0xFF);
-  }
+	for (i = 0; i < CIPHERSUITES; i++) {
+		fprintf(stderr,
+			"%3u CipherSuite %s = { 0x%02X,0x%02X };\n",
+			CipherSuites[i], CIPHER_TXT(CipherSuites[i]),
+			CipherSuites[i] >> 8, CipherSuites[i] & 0xFF);
+	}
 }
 
 CipherSuite * tls_suites()
@@ -1555,9 +1555,9 @@ const char * tls_suite_name(uint16_t n)
 
 void tls_print_version()
 {
-  fprintf(stderr, "SSL/TLS protocol_version:%u.%u\n",
-    PROTOCOLMAJOR, PROTOCOLMINOR);
-  fprintf(stderr, "Available cipher_suites:%u\n", CIPHERSUITES);
+	fprintf(stderr, "SSL/TLS protocol_version:%u.%u\n",
+		PROTOCOLMAJOR, PROTOCOLMINOR);
+	fprintf(stderr, "Available cipher_suites:%u\n", CIPHERSUITES);
 }
 
 uint8_t tls_stat_flags (void)

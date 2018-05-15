@@ -41,17 +41,17 @@
 
 /* Fallback to TLS 1.2 */
 #if NO(__SSL_3_0__) &&\
-    NO(__TLS_1_0__) &&\
+		NO(__TLS_1_0__) &&\
 		NO(__RFC2712__) &&\
 		NO(__RFC3268__) &&\
 		NO(__DFTXP56__) &&\
 		NO(__RFC4132__) &&\
 		NO(__RFC4162__) &&\
 		NO(__RFC4279__) &&\
-    NO(__TLS_1_1__) &&\
+		NO(__TLS_1_1__) &&\
 		NO(__RFC4492__) &&\
 		NO(__RFC5054__) &&\
-    NO(__TLS_1_2__) &&\
+		NO(__TLS_1_2__) &&\
 		NO(__RFC5288__) &&\
 		NO(__RFC5289__) &&\
 		NO(__RFC5932__) &&\
@@ -149,10 +149,10 @@
 
 /* Version-specific definitions */
 /* SSL 3.0 */
-#if   YES(__SSL_3_0__) &&\
-       NO(__TLS_1_0__) &&\
-       NO(__TLS_1_1__) &&\
-       NO(__TLS_1_2__)
+#if YES(__SSL_3_0__) &&\
+		 NO(__TLS_1_0__) &&\
+		 NO(__TLS_1_1__) &&\
+		 NO(__TLS_1_2__)
 	#undef  PROTOCOLMAJOR
 	#undef  PROTOCOLMINOR
 	#define PROTOCOLMAJOR 3
@@ -161,9 +161,9 @@
 	#define CIPHERSUITEMANDATORY 0x0000 /* TLS_NULL_WITH_NULL_NULL */
 /* TLS 1.0 */
 #elif  NO(__SSL_3_0__) &&\
-      YES(__TLS_1_0__) &&\
-       NO(__TLS_1_1__) &&\
-       NO(__TLS_1_2__)
+			YES(__TLS_1_0__) &&\
+			 NO(__TLS_1_1__) &&\
+			 NO(__TLS_1_2__)
 	#undef  PROTOCOLMAJOR
 	#undef  PROTOCOLMINOR
 	#define PROTOCOLMAJOR 3
@@ -185,9 +185,9 @@
 	#define CIPHERSUITEMANDATORY 0x0013 /* TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA */
 /* TLS 1.1 */
 #elif  NO(__SSL_3_0__) &&\
-       NO(__TLS_1_0__) &&\
-      YES(__TLS_1_1__) &&\
-       NO(__TLS_1_2__)
+			 NO(__TLS_1_0__) &&\
+			YES(__TLS_1_1__) &&\
+			 NO(__TLS_1_2__)
 	#undef  PROTOCOLMAJOR
 	#undef  PROTOCOLMINOR
 	#define PROTOCOLMAJOR 3
@@ -202,9 +202,9 @@
 	#define CIPHERSUITEMANDATORY 0x000A /* TLS_RSA_WITH_3DES_EDE_CBC_SHA */
 /* TLS 1.2 */
 #elif  NO(__SSL_3_0__) &&\
-       NO(__TLS_1_0__) &&\
-       NO(__TLS_1_1__) &&\
-      YES(__TLS_1_2__)
+			 NO(__TLS_1_0__) &&\
+			 NO(__TLS_1_1__) &&\
+			YES(__TLS_1_2__)
 	#undef  PROTOCOLMAJOR
 	#undef  PROTOCOLMINOR
 	#define PROTOCOLMAJOR 3

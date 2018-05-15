@@ -285,7 +285,7 @@ const char * tls_HashAlgorithmNames[TLS_HASH_ALGORITHMS_MAX + 1] = {
 };
 
 #define TLS_HASH_ALGORITHM_TXT(n) \
-  (((n) >= 0 && (n) <= TLS_HASH_ALGORITHMS_MAX) ? \
+	(((n) >= 0 && (n) <= TLS_HASH_ALGORITHMS_MAX) ? \
 		tls_HashAlgorithmNames[(n)] : "ERR_NOT_IMPLEMENTED")
 
 #define TLS_SIGNATURE_ALGORITHMS_MAX 3
@@ -298,7 +298,7 @@ const char * tls_SignatureAlgorithmNames[TLS_SIGNATURE_ALGORITHMS_MAX + 1] = {
 };
 
 #define TLS_SIGNATURE_ALGORITHM_TXT(n) \
-  (((n) >= 0 && (n) <= TLS_SIGNATURE_ALGORITHMS_MAX) ? \
+	(((n) >= 0 && (n) <= TLS_SIGNATURE_ALGORITHMS_MAX) ? \
 		tls_SignatureAlgorithmNames[(n)] : "ERR_NOT_IMPLEMENTED")
 
 struct __attribute__((__packed__))

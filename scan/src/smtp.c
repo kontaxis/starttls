@@ -332,23 +332,23 @@ int open_dump_file (char * opt_dump_dir, uint16_t suite)
 	}
 
 	/* Open file descriptor to dump entire TLS conversation */
-  char *s = strdup(tls_suite_name(suite));
-  for (r = strlen(s) - 1; r >= 0 && isspace(s[r]); r--) {
-    s[r] = '\0';
-  }
-  char tls_out_filename[0xFFFF]; /* should be enough :D */
-  snprintf(tls_out_filename, sizeof(tls_out_filename),
-    "%s/%s.%u.%u.0x%04x_%s", opt_dump_dir, "ssl",
+	char *s = strdup(tls_suite_name(suite));
+	for (r = strlen(s) - 1; r >= 0 && isspace(s[r]); r--) {
+		s[r] = '\0';
+	}
+	char tls_out_filename[0xFFFF]; /* should be enough :D */
+	snprintf(tls_out_filename, sizeof(tls_out_filename),
+		"%s/%s.%u.%u.0x%04x_%s", opt_dump_dir, "ssl",
 		(uint8_t) tls_suite_version_major(),
-    (uint8_t) tls_suite_version_minor(), (uint16_t) suite, s);
-  if (s) {
-    free(s);
-  }
+		(uint8_t) tls_suite_version_minor(), (uint16_t) suite, s);
+	if (s) {
+		free(s);
+	}
 
 	if ((r = open(tls_out_filename, O_CREAT | O_RDWR | O_TRUNC,
-      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-      perror("open");
-  }
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
+			perror("open");
+	}
 
 	return r;
 }
@@ -571,7 +571,7 @@ int main(int argc, char**argv)
 
 	/* If specific ciphersuites have been specified, do only use those. 
 	 * Else, go over all ciphersuites assuming the target supports STARTTLS.
-   * Abort on SMTP error. */
+	 * Abort on SMTP error. */
 	for (x = 0; x < CipherSuite_count; x++) {
 		/* Set ciphersuite(s) to be used */
 		tls_init();
