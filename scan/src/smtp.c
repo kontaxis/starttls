@@ -366,6 +366,7 @@ int open_dump_file (char * opt_dump_dir, uint16_t suite)
  * First packet over the socket will be a ClientHello. */
 #define OPT_TLS_DIRECT      (0x1 << 4)
 #define OPT_DUMP_DIR        (0x1 << 5)
+#define OPT_RUSH            (0x1 << 6)
 
 #define ERROR_RESERVED 0
 #define ERROR_FATALUFO 1 /* fatal unknown */
@@ -415,11 +416,12 @@ int main(int argc, char**argv)
 	opt_flags = 0x00000000;
 	opt_ciphersuite_count = 0;
 
-	while ((i = getopt(argc, argv, "hvlo:s:x:dp:t:")) != -1) {
+	while ((i = getopt(argc, argv, "hvlo:s:x:drp:t:")) != -1) {
 		switch(i) {
 			case 'h':
 				fprintf(stderr,
-					"Use: %s [-h] [-v] [-l] [-s ciphersuite] [-x ciphersuite] "
+					"Use: %s [-h] [-v] [-l] [-o out_dir] "
+					"[-s ciphersuite] [-x ciphersuite] [-d] [-r] "
 					"[-p port] -t <IP address> \n", argv[0]);
 				fprintf(stderr, "-h: prints use instructions (this)\n");
 				fprintf(stderr, "-v: version information\n");
@@ -429,6 +431,7 @@ int main(int argc, char**argv)
 					"-s: uses only specified ciphersuite (vs all), base10 integer\n");
 				fprintf(stderr, "-x: same as -s but in base16\n");
 				fprintf(stderr, "-d: proceeds with SSL/TLS directly (no SMTP talk)\n");
+				fprintf(stderr, "-r: rush. Don't wait between probes\n");
 				fprintf(stderr, "-p: destination TCP Port (defaults to %u)\n",
 					DEFAULT_TARGET_PORT_TCP);
 				fprintf(stderr, "-t: target IPv4 address (mandatory)\n");
@@ -497,6 +500,9 @@ int main(int argc, char**argv)
 				break;
 			case 'd':
 				opt_flags |= OPT_TLS_DIRECT;
+				break;
+			case 'r':
+				opt_flags |= OPT_RUSH;
 				break;
 			case 'p':
 				i = atoi(optarg);
@@ -664,7 +670,9 @@ int main(int argc, char**argv)
 		}
 
 		/* mandatory sleep to not overwhelm the server */
-		if (x + 1 < CipherSuite_count) {sleep(10);}
+		if (!(opt_flags & OPT_RUSH) && (x + 1 < CipherSuite_count)) {
+			sleep(10);
+		}
 	}
 
 	return error;
