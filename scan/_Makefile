@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-hostname = "\"www.example.com\""
+hostname = "\"localhost.\""
 
 all: \
 	bin/smtp_ssl3  bin/smtp_ssl3_god  bin/smtp_tls1  bin/smtp_tls1_god  \
